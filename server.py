@@ -4,9 +4,10 @@ from DNS_Header import DNSHeader
 from DNS_Question import DNSQuestion
 from res_code import ResCode
 from record_type import RecordType
-from constants import HOST, DEFAULT_PORT, RANDOM_REQUEST_HEADER, ROOT_DNS_SERVER
+from cache_manager import CacheManager
+from constants import HOST, DEFAULT_PORT, RANDOM_REQUEST_HEADER, ROOT_DNS_SERVER, CACHE_FILE_NAME
 
-def create_final_response_packet(request, response):
+def create_final_response_packet(request, rescode, answer_records=None):
 
     dns_response_header = DNSHeader(
         id = request.header.id,
@@ -16,10 +17,10 @@ def create_final_response_packet(request, response):
         is_truncated = False,
         is_authoritative = False,
         is_response = True,
-        rescode = response.header.rescode,
+        rescode = rescode,
         z = 0,
         questions = request.header.questions,
-        answers = response.header.answers,
+        answers = len(answer_records),
         authoritative_entries = 0,
         resource_entries = 0
     )
@@ -36,7 +37,7 @@ def create_final_response_packet(request, response):
     for question in request.questions:
         final_response_packet.questions.append(question)
 
-    for answer in response.answers:
+    for answer in answer_records:
         final_response_packet.answers.append(answer)
 
     return final_response_packet
@@ -142,15 +143,29 @@ def recursive_lookup(ques_domain_name, ques_type):
         ns = nsRecordIpAddress
 
 
-def handleQuery(sock):
+def handleQuery(sock, cache_manager):
     # Receiving dns question query from client.
     request, addr = sock.recvfrom(1024)
     
     dns_request_packet = DNSPacket.getDNSPacketFromBuffer(request)
 
-    dns_response_packet = recursive_lookup(dns_request_packet.questions[0].ques_name, dns_request_packet.questions[0].ques_type)
+    requested_domain = dns_request_packet.questions[0].ques_name
+    request_ques_type = dns_request_packet.questions[0].ques_type
 
-    final_response_packet = create_final_response_packet(dns_request_packet, dns_response_packet)
+    # Check if the request can be served through cache
+    cached_value = cache_manager.get_cache_entry(requested_domain, request_ques_type)
+    if (cached_value is not None):
+        print('YAY FOUND IN CACHE')
+        res_code = ResCode.NOERROR
+        answer_records = cached_value
+    else:
+        dns_response_packet = recursive_lookup(requested_domain, request_ques_type)
+        res_code = dns_response_packet.header.rescode
+        answer_records = dns_response_packet.answers
+        if (len(answer_records) > 0):
+            cache_manager.add_cache_entry(requested_domain, request_ques_type, answer_records)
+
+    final_response_packet = create_final_response_packet(dns_request_packet, res_code, answer_records)
     encoded_response = final_response_packet.encodeDNSPacket()
 
     sock.sendto(encoded_response, addr)
@@ -160,23 +175,22 @@ if __name__ == '__main__':
     # Bind a UDP Socket to listen for DNS requests
     server = (HOST, DEFAULT_PORT)
 
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.bind((HOST, DEFAULT_PORT))
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.bind((HOST, DEFAULT_PORT))
 
-    while True:
-        handleQuery(sock)
+        cache_manager = CacheManager(cacheFileName=CACHE_FILE_NAME)
 
+        while True:
+            handleQuery(sock, cache_manager)
 
+    except KeyboardInterrupt:
+        # Saving catched data in persistance storage if server is killed explicitly.
+        cache_manager.save_to_file(CACHE_FILE_NAME)
+        sock.close()
 
-
-
-
-
-
-
-
-## Cache structure:
-## key -> domain_name, ques_type
-## value -> list of record entries
-##
-##
+    except Exception as error:
+        # Saving catched data in persistance storage if server is killed by unknown error.
+        cache_manager.save_to_file(CACHE_FILE_NAME)
+        print(error)
+        sock.close()
