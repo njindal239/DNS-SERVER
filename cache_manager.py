@@ -1,6 +1,7 @@
 import pickle
 import os
 from time import time
+from threading import Lock
 
 """
 Structure of cache:
@@ -12,7 +13,8 @@ class CacheManager:
 
     def __init__(self, cacheFileName=None, cacheHours=DEFAULT_CACHE_HOURS):
         self.cacheHours = cacheHours
-        self.cache = {}
+        self.cache = {} # This is the shared resource between threads
+        self.lock = Lock()
 
         if cacheFileName is None:
             return
@@ -35,7 +37,10 @@ class CacheManager:
     def add_cache_entry(self, domain_name, ques_type, records):
         cache_key = self.construct_cache_key(domain_name, ques_type)
         cache_value = self.construct_cache_value(records)
+        
+        self.lock.acquire()
         self.cache[cache_key] = cache_value
+        self.lock.release()
 
     def get_cache_entry(self, domain_name, ques_type):
         cache_key = self.construct_cache_key(domain_name, ques_type)
@@ -48,7 +53,9 @@ class CacheManager:
         # Check if the key is expired
         time_diff = time() - cache_value['time']
         if (time_diff > self.cacheHours*3600):
+            self.lock.acquire()
             del self.cache[cache_key]
+            self.lock.release()
             return None
 
         # Now, we know DNS cache exists and is valid

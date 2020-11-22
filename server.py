@@ -143,25 +143,8 @@ def recursive_lookup(ques_domain_name, ques_type):
             return response
         ns = nsRecordIpAddress
 
-def resolveDomainHandler(sock, addr, dns_request_packet, cache_manager):
-    requested_domain = dns_request_packet.questions[0].ques_name
-    request_ques_type = dns_request_packet.questions[0].ques_type
 
-    dns_response_packet = recursive_lookup(requested_domain, request_ques_type)
-    res_code = dns_response_packet.header.rescode
-    answer_records = dns_response_packet.answers
-    if (len(answer_records) > 0):
-        cache_manager.add_cache_entry(requested_domain, request_ques_type, answer_records)
-
-    final_response_packet = create_final_response_packet(dns_request_packet, res_code, answer_records)
-    encoded_response = final_response_packet.encodeDNSPacket()
-
-    sock.sendto(encoded_response, addr)
-
-
-def handleQuery(sock, cache_manager):
-    # Receiving dns question query from client.
-    request, addr = sock.recvfrom(1024)
+def handleQuery(sock, cache_manager, request, addr):
     
     dns_request_packet = DNSPacket.getDNSPacketFromBuffer(request)
 
@@ -171,15 +154,15 @@ def handleQuery(sock, cache_manager):
     # Check if the request can be served through cache
     cached_value = cache_manager.get_cache_entry(requested_domain, request_ques_type)
     if (cached_value is None):
-        ## Start the thread
-        t = Thread(target=resolveDomainHandler, args=(
-            sock, addr, dns_request_packet, cache_manager))
-        t.start()
-        return
+        dns_response_packet = recursive_lookup(requested_domain, request_ques_type)
+        res_code = dns_response_packet.header.rescode
+        answer_records = dns_response_packet.answers
+        if (len(answer_records) > 0):
+            cache_manager.add_cache_entry(requested_domain, request_ques_type, answer_records)
+    else:
+        res_code = ResCode.NOERROR
+        answer_records = cached_value
     
-    print('YAY FOUND IN CACHE')
-    res_code = ResCode.NOERROR
-    answer_records = cached_value
 
     final_response_packet = create_final_response_packet(dns_request_packet, res_code, answer_records)
     encoded_response = final_response_packet.encodeDNSPacket()
@@ -198,9 +181,13 @@ if __name__ == '__main__':
         cache_manager = CacheManager(cacheFileName=CACHE_FILE_NAME)
 
         while True:
-            print('BEFORE HANDLING QUERY')
-            handleQuery(sock, cache_manager)
-            print('AFTER HANDLING QUERY')
+            # Receiving dns question query from client.
+            request, addr = sock.recvfrom(1024)
+
+            ## Start the thread
+            t = Thread(target=handleQuery, args=(
+                sock, cache_manager, request, addr))
+            t.start()
 
     except KeyboardInterrupt:
         # Saving catched data in persistance storage if server is killed explicitly.
