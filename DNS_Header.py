@@ -85,5 +85,3 @@ class DNSHeader:
         }
 
         print(result)
-
-

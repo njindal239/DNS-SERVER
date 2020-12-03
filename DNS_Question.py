@@ -42,8 +42,3 @@ class DNSQuestion:
             "Question Class": self.ques_class
         }
         print(result)
-
-        
-
-    
-        
