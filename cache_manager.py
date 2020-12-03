@@ -9,10 +9,8 @@ Structure of cache:
 - value is composed of list of answer records and time
 """
 class CacheManager:
-    DEFAULT_CACHE_HOURS = 3
 
-    def __init__(self, cacheFileName=None, cacheHours=DEFAULT_CACHE_HOURS):
-        self.cacheHours = cacheHours
+    def __init__(self, cacheFileName=None):
         self.cache = {} # This is the shared resource between threads
         self.lock = Lock()
 
@@ -30,13 +28,15 @@ class CacheManager:
     def construct_cache_key(self, domain_name, ques_type):
         return f'{domain_name}_{ques_type}'
 
-    def construct_cache_value(self, records):
-        return {'records': records, 'time': time()}
+    def construct_cache_value(self, records, cache_ttl):
+        return {'records': records, 'time': time(), 'ttl': cache_ttl}
 
 
     def add_cache_entry(self, domain_name, ques_type, records):
         cache_key = self.construct_cache_key(domain_name, ques_type)
-        cache_value = self.construct_cache_value(records)
+        num_records = len(records)
+        cache_ttl = records[num_records-1].ttl
+        cache_value = self.construct_cache_value(records, cache_ttl)
         
         self.lock.acquire()
         self.cache[cache_key] = cache_value
@@ -52,7 +52,8 @@ class CacheManager:
 
         # Check if the key is expired
         time_diff = time() - cache_value['time']
-        if (time_diff > self.cacheHours*3600):
+        cache_ttl = cache_value['ttl']
+        if (time_diff > cache_ttl):
             self.lock.acquire()
             del self.cache[cache_key]
             self.lock.release()
