@@ -19,7 +19,9 @@ class DNSRecord:
         self.host = host # for record type NS, CNAME, MX
         self.priority = priority # for MX
 
-
+    """
+    Decode DNS Record information from bytes
+    """
     @classmethod
     def getDNSRecordFromBuffer(cls, message, offset):
 
@@ -96,6 +98,9 @@ class DNSRecord:
         ), offset
 
     
+    """
+    Encode DNS Record information into bytes
+    """
     def toBytes(self):
 
         if (self.recordType == RecordType.UNKNOWN):
@@ -125,6 +130,9 @@ class DNSRecord:
         return record_bytes
 
 
+    """
+    Dump DNS Record information to screen
+    """
     def printRecordInfo(self):
         result = {
             "Domain Name": self.domain,
@@ -139,6 +147,10 @@ class DNSRecord:
         }
         print(result)
 
+    """
+    Split the ip address (string form) into an array of
+    four integers
+    """
     def splitIpIntoInts(self):
         ip_array = []
 

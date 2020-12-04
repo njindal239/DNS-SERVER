@@ -1,5 +1,9 @@
 from enum import Enum
 
+"""
+This class specifies different types of return 
+types for the DNS Packet
+"""
 class ResCode(Enum):
     NOERROR = 0
     FORMERR = 1

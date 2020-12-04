@@ -1,6 +1,9 @@
 import struct
 
-# To get string from message.
+"""
+Decodes labels into strings according to DNS host name
+rules
+"""
 def decode_labels(message, offset):
     labels = []
     while True:
@@ -28,6 +31,10 @@ def decode_labels(message, offset):
         labels.append(*struct.unpack_from("!%ds" % length, message, offset))
         offset += length
 
+"""
+Splits a name into labels and then encodes it according to
+DNS host name encoding rules
+"""
 def encode_labels(name):
     labels = name.split('.')
 
@@ -41,28 +48,8 @@ def encode_labels(name):
     return encoded_label
 
 
-## EXPERIMENTAL ENCODE LABELS WITH COMPRESSION
-def new_encode_labels(name, all_packet_labels):
-    labels = name.split('.')
-
-    encoded_label = b""
-    for label in labels:
-        if (all_packet_labels[label] != None):
-            # It means that label has been used before and we can use compression
-            starting_byte = all_packet_labels[label]
-            bytes_to_put = starting_byte & 0xc000
-            encoded_label += bytes_to_put.to_bytes(2, byteorder='big')
-            continue
-
-        # label is not present already, so we add it now
-        all_packet_labels[label] = len(encoded_label)
-        length = int(len(label))
-        encoded_label += length.to_bytes(1, byteorder='big')
-        encoded_label += label.encode()
-    
-    encoded_label += (0).to_bytes(1, byteorder='big')
-    return encoded_label
-
-
+"""
+Combines a list of labels to return a host name
+"""
 def combine_labels(labels):
     return b'.'.join(labels).decode()

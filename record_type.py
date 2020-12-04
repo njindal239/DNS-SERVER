@@ -1,5 +1,9 @@
 from enum import Enum
 
+"""
+This class specifies different type of records supported
+by this DNS Server
+"""
 class RecordType(Enum):
     UNKNOWN = 0
     A = 1

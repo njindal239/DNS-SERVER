@@ -8,6 +8,10 @@ from cache_manager import CacheManager
 from threading import Thread
 from constants import HOST, DEFAULT_PORT, RANDOM_REQUEST_HEADER, ROOT_DNS_SERVER, CACHE_FILE_NAME
 
+"""
+Constructs a DNS response packet based on the request, result code and 
+answer records found through queries.
+"""
 def create_final_response_packet(request, rescode, answer_records=None):
 
     dns_response_header = DNSHeader(
@@ -44,7 +48,10 @@ def create_final_response_packet(request, rescode, answer_records=None):
     return final_response_packet
 
 
-
+"""
+Sends DNS query to the passed in authoritative DNS server, decodes the 
+response from the server and returns the decoded response
+"""
 def query_authoritative_dns_server(ques_domain_name, ques_type, server):
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -89,6 +96,12 @@ def query_authoritative_dns_server(ques_domain_name, ques_type, server):
     return DNSPacket.getDNSPacketFromBuffer(response_packet)
 
 
+"""
+Recursively queries the authoritative DNS servers starting from the 
+pre-selected root server until an answer is reached. If no answer is
+recevied with no authority or additional section, the an empty answer
+section is returned.
+"""
 def recursive_lookup(ques_domain_name, ques_type):
     # Starting with a.root-servers.net
     ns = ROOT_DNS_SERVER
@@ -143,7 +156,11 @@ def recursive_lookup(ques_domain_name, ques_type):
             return response
         ns = nsRecordIpAddress
 
-
+"""
+Decodes the DNS request. Checks if the requested domain is present in
+cache. If yes, return the value from cache. Otherwise, recursively query
+authoritative DNS servers to get the IP address.
+"""
 def handleQuery(sock, cache_manager, request, addr):
     
     dns_request_packet = DNSPacket.getDNSPacketFromBuffer(request)

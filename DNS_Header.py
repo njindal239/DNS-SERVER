@@ -27,6 +27,9 @@ class DNSHeader:
         self.resource_entries = resource_entries
 
 
+    """
+    Decode DNS Header information from bytes
+    """
     @classmethod
     def getDNSHeaderFromBuffer(cls, buffer):
         id, misc, qdcount, ancount, nscount, arcount = DNSHeader.DNS_HEADER_FORMAT.unpack_from(buffer)
@@ -44,12 +47,11 @@ class DNSHeader:
             is_truncated=tc, is_authoritative=aa, is_response=qr, rescode=rcode, z=z,
             questions=qdcount, answers=ancount, authoritative_entries=nscount, resource_entries=arcount)
 
+    """
+    Decode DNS Header information into bytes
+    """
     def toBytes(self):
         headerBytes = self.id.to_bytes(2, "big")
-
-        # Constructing 2nd byte
-        # headerBytes += self.recursion_desired.to_bytes(1, "big") | (self.is_truncated.to_bytes(1, "big") << 1) | (self.is_authoritative.to_bytes(1, "big") << 2) | (self.opcode.toBytes(1, "big") << 3) | (self.is_response.to_bytes(1, "big") << 7)
-        # headerBytes += self.recursion_desired.to_bytes(1, "big") | (self.is_truncated << 1).to_bytes(1, "big")
        
         # Encode first byte
         firstByte = self.recursion_desired | (self.is_truncated << 1) | (self.is_authoritative << 2) | (self.opcode << 3) | (self.is_response << 7)
@@ -68,6 +70,9 @@ class DNSHeader:
         return headerBytes
 
 
+    """
+    Dump DNS Header to screen
+    """
     def printHeaderInfo(self):
         result = {"id": self.id,
             "is_response": self.is_response,

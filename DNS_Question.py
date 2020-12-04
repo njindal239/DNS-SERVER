@@ -11,6 +11,9 @@ class DNSQuestion:
         self.ques_class = ques_class
 
 
+    """
+    Decode DNS Question information from bytes
+    """
     @classmethod
     def getDNSQuestionFromBuffer(cls, message, offset):
         # Getting query name.
@@ -27,6 +30,9 @@ class DNSQuestion:
 
         return DNSQuestion(ques_name=ques_name, ques_type=ques_type, ques_class=ques_class), offset
 
+    """
+    Encode DNS Question information into bytes
+    """
     def toBytes(self):
         ques_bytes = encode_labels(self.ques_name)
         ques_bytes += self.ques_type.to_bytes(2, byteorder='big')
@@ -35,6 +41,9 @@ class DNSQuestion:
         return ques_bytes
 
 
+    """
+    Dump DNS Question to screen
+    """
     def printQuestionInfo(self):
         result = {
             "Question Name": self.ques_name,

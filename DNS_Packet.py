@@ -14,10 +14,9 @@ class DNSPacket:
         self.authority_entries = authority_entries
         self.additional_entries = additional_entries
 
-        # Filter out unssupported records from the DNS packet
-        # self.filterUnsupportedRecords()
-
-
+    """
+    Decode DNS Packet information from bytes
+    """
     @classmethod
     def getDNSPacketFromBuffer(cls, buffer):
         offset = 0
@@ -31,10 +30,16 @@ class DNSPacket:
         return DNSPacket(header, questions, answers, authority_entries, additional_entries)
 
 
+    """
+    Decode Header Section of DNS Packet from bytes
+    """
     @classmethod
     def decodeHeaderSection(cls, buffer):
         return DNSHeader.getDNSHeaderFromBuffer(buffer)
 
+    """
+    Decode Question Section of DNS Packet from bytes
+    """
     @classmethod
     def decodeQuestionSection(cls, buffer, offset, numQuestions):
 
@@ -47,6 +52,9 @@ class DNSPacket:
         
         return questions, offset
 
+    """
+    Decode Answer Section of DNS Packet from bytes
+    """
     @classmethod
     def decodeAnswerSection(cls, buffer, offset, numAnswers):
 
@@ -59,6 +67,9 @@ class DNSPacket:
         
         return answers, offset
 
+    """
+    Decode Authority Section of DNS Packet from bytes
+    """
     @classmethod
     def decodeAuthoritySection(cls, buffer, offset, numAuthEntries):
 
@@ -71,6 +82,9 @@ class DNSPacket:
         
         return authority_entries, offset
 
+    """
+    Decode Additional Section of DNS Packet from bytes
+    """
     @classmethod
     def decodeAdditionalSection(cls, buffer, offset, numAdditionalEntries):
 
@@ -83,6 +97,9 @@ class DNSPacket:
         
         return additional_entries, offset
 
+    """
+    Encode Question Section of DNS Packet to bytes
+    """
     def encodeQuestionSection(self):
         ques_bytes = b""
         for question in self.questions:
@@ -92,6 +109,9 @@ class DNSPacket:
         
         return ques_bytes
 
+    """
+    Encode Answer Section of DNS Packet to bytes
+    """
     def encodeAnswerSection(self):
         ans_bytes = b""
         for answer in self.answers:
@@ -101,6 +121,9 @@ class DNSPacket:
         
         return ans_bytes
 
+    """
+    Encode Authority Section of DNS Packet to bytes
+    """
     def encodeAuthoritySection(self):
         authority_bytes = b""
         for entry in self.authority_entries:
@@ -110,6 +133,9 @@ class DNSPacket:
         
         return authority_bytes
 
+    """
+    Encode Additional Section of DNS Packet to bytes
+    """
     def encodeAdditionalSection(self):
         additional_bytes = b""
         for entry in self.additional_entries:
@@ -119,6 +145,9 @@ class DNSPacket:
         
         return additional_bytes
 
+    """
+    Encode DNS Packet to bytes
+    """
     def encodeDNSPacket(self):
         buffer = self.header.toBytes()
 
@@ -128,11 +157,18 @@ class DNSPacket:
         buffer += self.encodeAdditionalSection()
         return buffer
 
+    """
+    Returns true if record type is known to the application,
+    false otherwise
+    """
     def filterUnknownRecordType(self, record):
         if(record.recordType == RecordType.UNKNOWN):
             return False
         return True
 
+    """
+    Filters out Unsupported Record Types from the DNS Packet
+    """
     def filterUnsupportedRecords(self):
         self.answers = list(filter(self.filterUnknownRecordType, self.answers))
         self.authority_entries = list(filter(self.filterUnknownRecordType, self.authority_entries))
@@ -144,6 +180,10 @@ class DNSPacket:
         self.header.resource_entries = len(self.additional_entries)
 
 
+    """
+    Returns a random IP address (from answer records) of the DNS Packet
+    This is used to query a random authoritative server.
+    """
     def getRandomIPv4AnswerRecord(self):
         ipv4AnswerRecords = list(filter(lambda record : record.recordType == RecordType.A, self.answers))
 
@@ -153,15 +193,20 @@ class DNSPacket:
         random_record = random.choice(ipv4AnswerRecords)
         return random_record.ip_addr
 
+    """
+    Returns a list of tuples of the form (domain, hostname) from the
+    NS Records in the authority section.
+    """
     def get_ns_tuples(self, ques_domain_name):
         ns_records = filter(lambda record : record.recordType == RecordType.NS, self.authority_entries)
         ns_tuples = map(lambda record : (record.domain, record.host), ns_records)
 
-        # Now, we discard any servers that are not authoritative to our query
-        ## We will see this later
         return list(ns_tuples)
 
-    
+    """
+    Returns a random IP address (from additional records) of the DNS Packet
+    matching a random NS record from the authority section.
+    """
     def getNSRecordIpAddress(self, ques_domain_name):
         ns_tuples = self.get_ns_tuples(ques_domain_name)
         
@@ -175,6 +220,10 @@ class DNSPacket:
         
         return None
     
+    """
+    Returns a random (domain, hostname) tuple from NS records in the 
+    authority section.
+    """
     def getUnresolvedNS(self, ques_domain_name):
         ns_tuples = self.get_ns_tuples(ques_domain_name)
 
