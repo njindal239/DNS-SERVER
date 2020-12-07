@@ -9,8 +9,8 @@ Python 3.7+
 
 ### How to Run Server
 1. Clone the git repository using: `git clone https://github.com/njindal239/DNS-SERVER.git`
-2. Go into the project directory: `cd DNS-Server`
-3. Run the server: `python server.py`
+2. Go into the project directory: `cd DNS-SERVER`
+3. Run the server: `python server.py` or `python3 server.py`
 
 ### Sample Test Cases
 Open another terminal tab and send DNS requests to the DNS Server using `dig` command line tool.
