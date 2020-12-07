@@ -28,3 +28,5 @@ Here are a few sample cases that you can try:
 
 6. Shut Down the server using `Ctrl+C`. The DNS cache gets saved to a file called `dns_cache.pickle`. Run the server again using: `python server.py`. Now,
 try a test case: `dig @127.0.0.1 -p 3000 microsoft.com`. (The answer should still be cached provided the cache entry did not expire).
+
+7. `dig MX @127.0.0.1 -p 3000 microsoft.com` (Sends a Query for MX record)
