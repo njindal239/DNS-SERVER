@@ -177,6 +177,7 @@ def handleQuery(sock, cache_manager, request, addr):
         if (len(answer_records) > 0):
             cache_manager.add_cache_entry(requested_domain, request_ques_type, answer_records)
     else:
+        print('CACHE HIT!')
         res_code = ResCode.NOERROR
         answer_records = cached_value
     
