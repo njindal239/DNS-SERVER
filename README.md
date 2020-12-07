@@ -18,9 +18,9 @@ Here are a few sample cases that you can try:
 
 1. `dig @127.0.0.1 -p 3000 google.com` (Query for IPv4 Address)
 
-2. `dig AAAA @127.0.0.1 -p 3000 google.com` (Query for IPv6 Address)
+2. `dig @127.0.0.1 -p 3000 google.com` (Find result in cache)
 
-3. `dig @127.0.0.1 -p 3000 google.com` (Find result in cache)
+3. `dig AAAA @127.0.0.1 -p 3000 google.com` (Query for IPv6 Address)
 
 4. `dig @127.0.0.1 -p 3000 en.wikipedia.org` (Returns two answer records - CNAME record and A record)
 
