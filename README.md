@@ -5,7 +5,7 @@
 Please follow the steps below in order to test the DNS Server.
 
 ### Pre-requisites
-Python 3.7
+Python 3.7+
 
 ### How to Run Server
 1. Clone the git repository using: `git clone https://github.com/njindal239/DNS-SERVER.git`
